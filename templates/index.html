@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI X-Ray Diagnosis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --blue:      #0ea5e9;
+            --blue-dark: #0284c7;
+            --blue-light:#e0f2fe;
+            --blue-pale: #f0f9ff;
+            --white:     #ffffff;
+            --text:      #0f172a;
+            --text-muted:#64748b;
+            --border:    #e2e8f0;
+            --success:   #10b981;
+            --radius:    14px;
+            --shadow:    0 2px 12px rgba(14,165,233,0.10), 0 1px 3px rgba(0,0,0,0.06);
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--blue-pale);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 32px 16px;
+        }
+
+        /* ── HEADER ─────────────────────── */
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+            animation: fadeDown 0.5s ease both;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .logo-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--blue), var(--blue-dark));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            box-shadow: 0 4px 14px rgba(14,165,233,0.35);
+        }
+
+        .logo-text {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .logo-text span { color: var(--blue); }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.5px;
+            line-height: 1.2;
+        }
+
+        .header p {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        /* ── CARD ───────────────────────── */
+        .card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 480px;
+            padding: 32px;
+            box-shadow: var(--shadow);
+            animation: fadeUp 0.5s ease both;
+        }
+
+        /* ── DROP ZONE ──────────────────── */
+        .drop-zone {
+            position: relative;
+            border: 2px dashed var(--blue-light);
+            border-radius: var(--radius);
+            background: var(--blue-pale);
+            padding: 40px 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .drop-zone:hover,
+        .drop-zone.active {
+            border-color: var(--blue);
+            background: #e0f2fe;
+        }
+
+        .drop-zone input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+
+        .dz-icon {
+            font-size: 40px;
+            margin-bottom: 12px;
+            display: block;
+            transition: transform 0.2s;
+        }
+
+        .drop-zone:hover .dz-icon { transform: translateY(-4px); }
+
+        .dz-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        .dz-hint {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .dz-hint a {
+            color: var(--blue);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        /* File selected pill */
+        .file-pill {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            background: var(--blue-pale);
+            border: 1px solid var(--blue-light);
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin-top: 14px;
+        }
+
+        .file-pill.show { display: flex; }
+
+        .file-pill-icon {
+            font-size: 20px;
+            line-height: 1;
+        }
+
+        .file-pill-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+        }
+
+        .file-pill-check {
+            width: 22px;
+            height: 22px;
+            background: var(--success);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 13px;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        /* ── BUTTON ─────────────────────── */
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            margin-top: 18px;
+            padding: 15px;
+            background: linear-gradient(135deg, var(--blue) 0%, var(--blue-dark) 100%);
+            color: white;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 15px;
+            font-weight: 700;
+            border: none;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 6px 20px rgba(14,165,233,0.30);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 28px rgba(14,165,233,0.40);
+        }
+
+        .btn:active { transform: translateY(0); }
+
+        /* ── DIVIDER ────────────────────── */
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 28px 0 0;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .divider-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+
+        /* ── RESULTS ────────────────────── */
+        .results {
+            margin-top: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            animation: fadeUp 0.4s ease both;
+        }
+
+        /* Diagnosis block */
+        .result-diagnosis {
+            background: var(--blue-pale);
+            border: 1px solid var(--blue-light);
+            border-left: 4px solid var(--blue);
+            border-radius: var(--radius);
+            padding: 16px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .rd-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--blue);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .rd-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .rd-badge {
+            background: #fef3c7;
+            color: #b45309;
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 100px;
+            white-space: nowrap;
+        }
+
+        /* Confidence block */
+        .result-confidence {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px 18px;
+        }
+
+        .rc-row {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .rc-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .rc-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--blue-dark);
+        }
+
+        .rc-value sup {
+            font-size: 14px;
+            color: var(--blue);
+        }
+
+        .bar-track {
+            height: 8px;
+            background: var(--blue-pale);
+            border-radius: 100px;
+            overflow: hidden;
+            border: 1px solid var(--blue-light);
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 100px;
+            background: linear-gradient(90deg, var(--blue), var(--blue-dark));
+            width: 0;
+            animation: growBar 1.2s cubic-bezier(0.16,1,0.3,1) 0.2s forwards;
+        }
+
+        @keyframes growBar {
+            to { width: var(--pct); }
+        }
+
+        /* Summary block */
+        .result-summary {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px 18px;
+        }
+
+        .rs-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .rs-text {
+            font-size: 13px;
+            color: var(--text);
+            line-height: 1.75;
+        }
+
+        /* X-ray image */
+        .result-image {
+            border-radius: var(--radius);
+            overflow: hidden;
+            border: 1px solid var(--border);
+            background: #0f172a;
+            position: relative;
+        }
+
+        .result-image img {
+            width: 100%;
+            display: block;
+        }
+
+        .img-tag {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(15,23,42,0.70);
+            color: rgba(255,255,255,0.85);
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+
+        /* ── FOOTER ─────────────────────── */
+        .footer {
+            margin-top: 24px;
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: center;
+            line-height: 1.6;
+            animation: fadeUp 0.6s 0.1s ease both;
+        }
+
+        /* ── ANIMATIONS ─────────────────── */
+        @keyframes fadeDown {
+            from { opacity: 0; transform: translateY(-16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 520px) {
+            .card { padding: 24px 20px; }
+            .header h1 { font-size: 22px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <div class="header">
+        <div class="logo">
+            <div class="logo-icon">🩻</div>
+            <div class="logo-text">Radix<span>AI</span></div>
+        </div>
+        <h1>AI X-Ray Diagnosis</h1>
+        <p>Upload a chest X-ray and get an instant AI analysis</p>
+    </div>
+
+    <!-- MAIN CARD -->
+    <div class="card">
+        <form method="POST" enctype="multipart/form-data" id="xrayForm">
+
+            <!-- Drop zone -->
+            <div class="drop-zone" id="dropZone">
+                <input type="file" name="file" id="fileInput" required accept="image/*,.dcm">
+                <span class="dz-icon">🩻</span>
+                <div class="dz-title">Drop your X-Ray image here</div>
+                <div class="dz-hint">or <a href="#">browse files</a> · PNG, JPG, DICOM</div>
+            </div>
+
+            <!-- File selected confirmation -->
+            <div class="file-pill" id="filePill">
+                <span class="file-pill-icon">📄</span>
+                <span class="file-pill-name" id="pillName">—</span>
+                <span class="file-pill-check">✓</span>
+            </div>
+
+            <!-- Submit -->
+            <button type="submit" class="btn">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 2v14M5 9l7-7 7 7"/><path d="M5 22h14"/></svg>
+                Analyze X-Ray
+            </button>
+
+        </form>
+
+        <!-- ── RESULTS (Jinja2) ─────────── -->
+        {% if prediction %}
+        <div class="divider">
+            <span class="divider-label">Result</span>
+        </div>
+
+        <div class="results">
+
+            <!-- Prediction -->
+            <div class="result-diagnosis">
+                <div>
+                    <div class="rd-label">Diagnosis</div>
+                    <div class="rd-value">{{ prediction }}</div>
+                </div>
+                <div class="rd-badge">Needs Review</div>
+            </div>
+
+            <!-- Confidence -->
+            <div class="result-confidence">
+                <div class="rc-row">
+                    <span class="rc-label">Confidence</span>
+                    <span class="rc-value">{{ confidence }}<sup>%</sup></span>
+                </div>
+                <div class="bar-track">
+                    <div class="bar-fill" style="--pct: {{ confidence }}%;"></div>
+                </div>
+            </div>
+
+            <!-- Summary -->
+            <div class="result-summary">
+                <div class="rs-label">Summary</div>
+                <p class="rs-text">{{ summary }}</p>
+            </div>
+
+            <!-- X-Ray Image -->
+            {% if image_path %}
+            <div class="result-image">
+                <img src="{{ image_path }}" alt="Uploaded X-Ray">
+                <div class="img-tag">SCAN</div>
+            </div>
+            {% endif %}
+
+        </div>
+        {% endif %}
+
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+        ⚠️ For research use only — not a substitute for professional medical advice.
+    </div>
+
+<script>
+    const input   = document.getElementById('fileInput');
+    const drop    = document.getElementById('dropZone');
+    const pill    = document.getElementById('filePill');
+    const pillName= document.getElementById('pillName');
+
+    function pick(file) {
+        if (!file) return;
+        pillName.textContent = file.name;
+        pill.classList.add('show');
+    }
+
+    input.addEventListener('change', () => pick(input.files[0]));
+
+    drop.addEventListener('dragover',  e => { e.preventDefault(); drop.classList.add('active'); });
+    drop.addEventListener('dragleave', ()  => drop.classList.remove('active'));
+    drop.addEventListener('drop', e => {
+        e.preventDefault();
+        drop.classList.remove('active');
+        const f = e.dataTransfer.files[0];
+        if (f) { const dt = new DataTransfer(); dt.items.add(f); input.files = dt.files; pick(f); }
+    });
+</script>
+
+</body>
+</html>
